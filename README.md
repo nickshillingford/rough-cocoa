@@ -1,5 +1,5 @@
 # Rough-Cocoa
-An iOS/tvOS/watchOS graphics library for rendering UI Bezier Paths in hand drawn sketch styles.
+An iOS graphics library for rendering UI Bezier Paths in hand drawn sketch styles.
 
 ## Install
 
@@ -102,7 +102,7 @@ gen.draw(drawing: line1, view: self.view)
 
 ## Notes
 
-Support for complex and custom paths will eventually be added.
+Support for arcs and custom paths will eventually be added.
 
 ## Credits
 
