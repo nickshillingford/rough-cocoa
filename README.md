@@ -7,7 +7,7 @@ Download the src folder from this repository and include the files in your Xcode
 
 ## Usage
 
-![Rough Cocoa shapes](https://firebasestorage.googleapis.com/v0/b/web-demo-2188e.appspot.com/o/rough.png?alt=media&token=29998706-f4c0-4cf8-bc06-61c290965e45)
+![Rough Cocoa shapes](https://firebasestorage.googleapis.com/v0/b/web-demo-2188e.appspot.com/o/IMG_3161.png?alt=media&token=3fee1f6d-a257-49fd-bef0-c2f217d0a4f2)
 
 ```swift
 let gen = Generator()
