@@ -1,212 +1,213 @@
 import Foundation
 import UIKit
 
-let rr = Renderer()
-
-class Hachure {
-    let bottom: Double
-    let right: Double
-    let left: Double
-    let top: Double
+class Generator {
+    let renderer: Renderer
+    var defaultOptions: [String : Any]
+    let defaultValues: [Any] = [2.0,    // max randomness
+                                1.0,    // bowing
+                                1.0,    // roughness
+                                1.0,    // stroke width
+                                -1.0,      // hachure gap
+                                0.0,      // hachure angle
+                                "hachure",  // fill style
+                                UIColor.black.cgColor,  // stroke color
+                                UIColor(red:0,green:0,blue:0,alpha:0).cgColor, // fill color
+                                -1.0,  // fill weight
+                                0.0,   // curve tightness
+                                9.0]   // curve step count
     
-    let sin: Double
-    let cos: Double
-    let tan: Double
-    let gap: Double
-    
-    var hGap: Double!
-    var pos: Double!
-    var deltaX: Double!
-    
-    var sLeft: Segment!
-    var sRight: Segment!
-    
-    init(_top: Double, _bottom: Double, _left: Double, _right: Double, _gap: Double, _sin: Double, _cos: Double, _tan: Double) {
-        self.bottom = _bottom
-        self.right = _right
-        self.left = _left
-        self.top = _top
-        self.gap = _gap
-        self.sin = _sin
-        self.cos = _cos
-        self.tan = _tan
-        
-        if Double(abs(_sin)) < 0.0001 {
-            self.pos = _left + _gap
-        }
-        else if abs(_sin) > 0.9999 {
-            self.pos = _top + _gap
-        }
-        else {
-            self.deltaX = (_bottom - _top) * abs(_tan)
-            self.pos = _left - abs(self.deltaX)
-            self.hGap = abs(_gap / _cos)
-            self.sLeft = Segment(_px1: _left, _py1: _bottom, _px2: _left, _py2: _top)
-            self.sRight = Segment(_px1: right, _py1: bottom, _px2: right, _py2: top)
-        }
+    init() {
+        self.renderer = Renderer()
+        self.defaultOptions = [
+            "maxRandomnessOffset": defaultValues[0],
+            "bowing": defaultValues[1],
+            "roughness": defaultValues[2],
+            "strokeWidth": defaultValues[3],
+            "hachureGap": defaultValues[4],
+            "hachureAngle": defaultValues[5],
+            "fillStyle": defaultValues[6],
+            "stroke": defaultValues[7],
+            "fill": defaultValues[8],
+            "fillWeight": defaultValues[9],
+            "curveTightness": defaultValues[10],
+            "curveStepCount": defaultValues[11]
+        ]
     }
     
-    func getNextLine() -> [Double] {
-        if abs(self.sin) < 0.0001 {
-            if self.pos < Double(self.right) {
-                let line: [Double] = [self.pos, self.top, self.pos, self.bottom]
-                self.pos = self.pos + self.gap
-                return line
-            }
-        }
-        else if Double(abs(self.sin)) > 0.9999 {
-            if self.pos < self.bottom {
-                let line: [Double] = [Double(self.left), self.pos, self.right, self.pos]
-                self.pos = self.pos + Double(self.gap)
-                return line
-            }
+    func line(x1: Int, y1: Int, x2: Int, y2: Int, opt: [String:Any]) -> [CAShapeLayer] {
+        let checked = self.checkOptions(input: opt)
+        let line = self.renderer.line(x1: x1, y1: y1, x2: x2, y2: y2, opt: checked)
+        return sketch(drawings: [line])
+    }
+    
+    func rectangle(x: Int, y: Int, width: Int, height: Int, opt: [String:Any]) -> [CAShapeLayer] {
+        let checked = self.checkOptions(input: opt)
+        let rect = self.renderer.rectangle(x: x, y: y, width: width, height: height, opt: checked)
+        var drawings: [Drawing] = [rect]
+        if checked["fillStyle"] as! String == "solid" {
+            let yc = [Double(y), Double(y), Double(y + height), Double(y + height)]
+            let xc = [Double(x), Double(x + width), Double(x + width), Double(x)]
+            let data = self.renderer.solidFill(xCoord: xc, yCoord: yc, opt: checked)
+            drawings.append(data)
         }
         else {
-            var xLower = (self.pos - (self.deltaX / 2))
-            var xUpper = (self.pos + (self.deltaX / 2))
-            var yLower = self.bottom
-            var yUpper = self.top
-            
-            if self.pos < (self.right + self.deltaX) {
-                while (((xLower < self.left) && (xUpper < self.left)) || ((xLower > self.right) && (xUpper > self.right))) {
-                    self.pos = self.pos + self.hGap
-                    xLower = (self.pos - (self.deltaX / 2))
-                    xUpper = (self.pos + (self.deltaX / 2))
-                    if self.pos > (self.right + self.deltaX) {
-                        return []
-                    }
-                }
-                let seg = Segment(_px1: xLower, _py1: yLower, _px2: xUpper, _py2: yUpper)
-                if seg.compare(segment: self.sLeft) == 2 {
-                    xLower = Double(seg.xi)
-                    yLower = seg.yi
-                }
-                if seg.compare(segment: self.sRight) == 2 {
-                    xUpper = Double(seg.xi)
-                    yUpper = seg.yi
-                }
-                if self.tan > 0 {
-                    xLower = self.right - (xLower - self.left)
-                    xUpper = self.right - (xUpper - self.left)
-                }
-                let line: [Double] = [xLower, yLower, xUpper, yUpper]
-                self.pos = self.pos + self.hGap
-                return line
-            }
+            let yc = [Double(y), Double(y), Double(y + height), Double(y + height)]
+            let xc = [Double(x), Double(x + width), Double(x + width), Double(x)]
+            let data = hachureFill(xCoord: xc, yCoord: yc, opt: checked)
+            drawings.append(data)
         }
-        return []
-    }
-}
-
-func hachureFill(xCoord: [Double], yCoord: [Double], opt: [String:Any]) -> Drawing {
-    var data: [Any] = []
-    var left = xCoord[0]
-    var right = xCoord[0]
-    var top = yCoord[0]
-    var bottom = yCoord[0]
-    
-    for i in 1...(xCoord.count - 1) {
-        left = min(left, xCoord[i])
-        right = max(right, xCoord[i])
-        top = min(top, yCoord[i])
-        bottom = max(bottom, yCoord[i])
+        return sketch(drawings: drawings)
     }
     
-    let strokeWidth = CGFloat(opt["strokeWidth"] as! Double)
-    let angle = CGFloat(opt["hachureAngle"] as! Double)
-    var gap = CGFloat(opt["hachureGap"] as! Double)
-    
-    if gap <= 0.0 {
-        gap = (strokeWidth * 4.0)
+    func circle(x: Int, y: Int, diameter: Int, opt: [String:Any]) -> [CAShapeLayer] {
+        let checked = self.checkOptions(input: opt)
+        let circ = self.renderer.ellipse(x: x, y: y, width: diameter, height: diameter, opt: checked)
+        var drawings: [Drawing] = [circ]
+        if checked["fillStyle"] as! String == "hachure" {
+            let data = hachureFillEllipse(cx: x, cy: y, width: diameter, height: diameter, opt: checked)
+            drawings.append(data)
+        }
+        return sketch(drawings: drawings)
     }
-    gap = CGFloat(max(Double(gap), 0.1))
     
-    let radPerDeg = CGFloat((Double.pi / 180))
-    let hachureAngle = angle.truncatingRemainder(dividingBy: 180.0) * radPerDeg
-    let cosAngle = cos(hachureAngle)
-    let sinAngle = sin(hachureAngle)
-    let tanAngle = tan(hachureAngle)
+    func ellipse(x: Int, y: Int, width: Int, height: Int, opt: [String:Any]) -> [CAShapeLayer] {
+        let checked = self.checkOptions(input: opt)
+        let elip = self.renderer.ellipse(x: x, y: y, width: width, height: height, opt: checked)
+        var drawings: [Drawing] = [elip]
+        if checked["fillStyle"] as! String == "hachure" {
+            let data = hachureFillEllipse(cx: x, cy: y, width: width, height: height, opt: checked)
+            drawings.append(data)
+        }
+        return sketch(drawings: drawings)
+    }
     
-    let rh = Hachure(_top: (top-1), _bottom: (bottom+1), _left: (left-1), _right: (right+1),
-                     _gap: Double(gap), _sin: Double(sinAngle), _cos: Double(cosAngle), _tan: Double(tanAngle))
-    
-    var rectCoords: [Double]
-    var empty = false
-    while !empty {
-        rectCoords = rh.getNextLine()
-        if rectCoords.count == 0 {
-            empty = true
+    func polygon(points: [[Any]], opt: [String:Any]) -> [CAShapeLayer] {
+        let checked = self.checkOptions(input: opt)
+        let poly = self.renderer.linearPath(points: points, close: true, opt: checked)
+        var drawings: [Drawing] = [poly]
+        var xc: [Double] = []
+        var yc: [Double] = []
+        for point in points {
+            let p1 = point[0] as! Int
+            let p2 = point[1] as! Int
+            xc.append(Double(p1))
+            yc.append(Double(p2))
+        }
+        if checked["fillStyle"] as! String == "solid" {
+            let data = self.renderer.solidFill(xCoord: xc, yCoord: yc, opt: checked)
+            drawings.append(data)
         }
         else {
-            let lines = getIntersectingLines(lC: rectCoords, xC: xCoord, yC: yCoord)
-            var i = 0
-            while i < lines.count {
-                if i < lines.count - 1 {
-                    let p1 = lines[i]
-                    let p2 = lines[i + 1]
-                    let node: [Any] = rr.doubleLine(x1: Int(p1[0]), y1: Int(p1[1]), x2: Int(p2[0]), y2: Int(p2[1]), opt: opt)
-                    data = data + node
+            let data = hachureFill(xCoord: xc, yCoord: yc, opt: checked)
+            drawings.append(data)
+        }
+        return sketch(drawings: drawings)
+    }
+   
+    func sketch(drawings: [Drawing]) -> [CAShapeLayer] {
+        var layers: [CAShapeLayer] = []
+        for drawing in drawings {
+            let sketch = UIBezierPath()
+            let layer = CAShapeLayer()
+            var index = 0
+            while index < drawing.data.count {
+                let dict = drawing.data[index] as! [String:[CGFloat]]
+                let key = dict.keys[dict.startIndex]
+                let val = dict.values[dict.startIndex]
+                setCGPoints(sketch: sketch, key: key, val: val)
+                index = index + 1
+            }
+            setLayerProps(drawing: drawing, layer: layer)
+            sketch.close()
+            layer.path = sketch.cgPath
+            layers.append(layer)
+        }
+        resetDefaultOptions()
+        return layers
+    }
+    
+    func checkOptions(input: [String : Any]) -> [String : Any] {
+        let r = "roughness", b = "bowing", s = "strokeWidth", a = "hachureAngle", g = "hachureGap", f = "fillWeight"
+        for (key, value) in input {
+            if (key == r || key == b || key == s || key == a || key == g || key == f) && (!validate(val: value)) {
+                if String(describing: type(of: value)) != "Int" {
+                    self.defaultOptions.updateValue(1.0, forKey: key)
                 }
-                i = i + 1
+                else {
+                    self.defaultOptions.updateValue(Double(value as! Int), forKey: key)
+                }
+            }
+            else {
+                self.defaultOptions.updateValue(value, forKey: key)
             }
         }
-    }
-    return Drawing(type: "fillSketch", data: data)
-}
-
-func hachureFillEllipse(cx: Int, cy: Int, width: Int, height: Int, opt: [String:Any]) -> Drawing {
-    var data: [Any] = []
-    let rough = opt["roughness"] as! Double
-    let radPerDeg = (CGFloat.pi / 180.0)
-    
-    let strokeWidth = CGFloat(opt["strokeWidth"] as! Double)
-    var fillWeight = CGFloat(opt["fillWeight"] as! Double)
-    var gap = CGFloat(opt["hachureGap"] as! Double)
-    let angle = CGFloat(opt["hachureAngle"] as! Double)
-    
-    let hachureAngle = angle.truncatingRemainder(dividingBy: 180.0) * radPerDeg
-    let tanAngle = tan(hachureAngle)
-    var rx = CGFloat(abs(width / 2))
-    var ry = CGFloat(abs(height / 2))
-    let aspectRatio = (ry / rx)
-    let hyp = sqrt(aspectRatio * tanAngle * aspectRatio * tanAngle + 1)
-    let sinPrime = (aspectRatio * tanAngle / hyp)
-    let cosPrime = (1 / hyp)
-    
-    rx += rr.getOffset(min: (-rx * 0.05), max: (rx * 0.05), roughness: rough)
-    ry += rr.getOffset(min: (-ry * 0.05), max: (ry * 0.05), roughness: rough)
-    
-    if gap <= 0.0 {
-        gap = (strokeWidth * 4.0)
-    }
-    if fillWeight < 0.0 {
-        fillWeight = (strokeWidth / 2.0)
+        return self.defaultOptions
     }
     
-    let gapPrime = gap / ((rx * ry / sqrt((ry * cosPrime) * (ry * cosPrime) + (rx * sinPrime) * (rx * sinPrime))) / rx)
-    let e1 = (rx * rx)
-    let e2 = (CGFloat(cx) - rx + gapPrime)
-    var halfLen = sqrt(e1 - e2 * e2)
-    var xPos = CGFloat(cx) - rx + gapPrime
-    while xPos < CGFloat(cx) + rx {
-        let s = (rx * rx) - (CGFloat(cx) - xPos) * (CGFloat(cx) - xPos)
-        halfLen = sqrt(s)
-        let p1 = rr.affine(x: xPos, y: (CGFloat(cy) - halfLen), cx: CGFloat(cx), cy: CGFloat(cy), sin: sinPrime, cos: cosPrime, asp: aspectRatio)
-        let p2 = rr.affine(x: xPos, y: (CGFloat(cy) + halfLen), cx: CGFloat(cx), cy: CGFloat(cy), sin: sinPrime, cos: cosPrime, asp: aspectRatio)
-        data = data + rr.doubleLine(x1: Int(p1[0]), y1: Int(p1[1]), x2: Int(p2[0]), y2: Int(p2[1]), opt: opt)
-        xPos += gapPrime
-    }
-    return Drawing(type: "fillSketch", data: data)
-}
-
-func getIntersectingLines(lC: [Double], xC: [Double], yC: [Double]) -> [[Double]] {
-    var intersections: [[Double]] = []
-    let s1 = Segment(_px1: lC[0], _py1: lC[1], _px2: lC[2], _py2: lC[3])
-    for i in 0...(xC.count - 1) {
-        let s2 = Segment(_px1: xC[i], _py1: yC[i], _px2: xC[(i + 1) % xC.count], _py2: yC[(i + 1) % xC.count])
-        if s1.compare(segment: s2) == 2 {
-            intersections.append([Double(s1.xi), Double(s1.yi)])
+    func setCGPoints(sketch: UIBezierPath, key: String, val: [CGFloat]) {
+        if key == "move" {
+            sketch.move(to: CGPoint(x: val[0], y: val[1]))
+        }
+        else if key == "bcurveTo" {
+            sketch.addCurve(to: CGPoint(x: val[4], y: val[5]),
+                            controlPoint1: CGPoint(x: val[0], y: val[1]),
+                            controlPoint2: CGPoint(x: val[2], y: val[3]))
+        }
+        else if key == "lineTo" {
+            sketch.addLine(to: CGPoint(x: val[0], y: val[1]))
         }
     }
-    return intersections
+    
+    func setLayerProps(drawing: Drawing, layer: CAShapeLayer) {
+        if drawing.type == "path" {
+            layer.lineWidth = CGFloat(self.defaultOptions["strokeWidth"] as! Double)
+            layer.strokeColor = (self.defaultOptions["stroke"] as! CGColor)
+            layer.fillColor = UIColor(red:0,green:0,blue:0,alpha:0).cgColor
+        }
+        else if drawing.type == "fillPath" {
+            layer.lineWidth = 0.0
+            layer.strokeColor = UIColor(red:0,green:0,blue:0,alpha:0).cgColor
+            layer.fillColor = (self.defaultOptions["fill"] as! CGColor)
+        }
+        else if drawing.type == "fillSketch" {
+            if (self.defaultOptions["fillWeight"] as! Double) < 0 {
+                layer.lineWidth = (CGFloat(self.defaultOptions["strokeWidth"] as! Double) / 2)
+            }
+            else {
+                layer.lineWidth = CGFloat(self.defaultOptions["fillWeight"] as! Double)
+            }
+            layer.strokeColor = (self.defaultOptions["fill"] as! CGColor)
+            layer.fillColor = UIColor(red:0,green:0,blue:0,alpha:0).cgColor
+        }
+    }
+    
+    func draw(drawing: [CAShapeLayer], view: UIView) {
+        for sketch in drawing.reversed() {
+            view.layer.addSublayer(sketch)
+        }
+    }
+    
+    func validate(val: Any) -> Bool {
+        var isValid = false
+        if String(describing: type(of: val)) == "Double" {
+            isValid = true
+        }
+        return isValid
+    }
+    
+    func resetDefaultOptions() {
+        self.defaultOptions.updateValue(defaultValues[0], forKey: "maxRandomnessOffset")
+        self.defaultOptions.updateValue(defaultValues[1], forKey: "bowing")
+        self.defaultOptions.updateValue(defaultValues[2], forKey: "roughness")
+        self.defaultOptions.updateValue(defaultValues[3], forKey: "strokeWidth")
+        self.defaultOptions.updateValue(defaultValues[4], forKey: "hachureGap")
+        self.defaultOptions.updateValue(defaultValues[5], forKey: "hachureAngle")
+        self.defaultOptions.updateValue(defaultValues[6], forKey: "fillStyle")
+        self.defaultOptions.updateValue(defaultValues[7], forKey: "stroke")
+        self.defaultOptions.updateValue(defaultValues[8], forKey: "fill")
+        self.defaultOptions.updateValue(defaultValues[9], forKey: "fillWeight")
+        self.defaultOptions.updateValue(defaultValues[10], forKey: "curveTightness")
+        self.defaultOptions.updateValue(defaultValues[11], forKey: "curveStepCount")
+    }
 }
