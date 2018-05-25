@@ -38,7 +38,7 @@ class Generator {
     func line(x1: Int, y1: Int, x2: Int, y2: Int, opt: [String:Any]) -> [CAShapeLayer] {
         let checked = self.checkOptions(input: opt)
         let line = self.renderer.line(x1: x1, y1: y1, x2: x2, y2: y2, opt: checked)
-        return self.sketch(drawings: [line])
+        return sketch(drawings: [line])
     }
     
     func rectangle(x: Int, y: Int, width: Int, height: Int, opt: [String:Any]) -> [CAShapeLayer] {
@@ -57,7 +57,7 @@ class Generator {
             let data = hachureFill(xCoord: xc, yCoord: yc, opt: checked)
             drawings.append(data)
         }
-        return self.sketch(drawings: drawings)
+        return sketch(drawings: drawings)
     }
     
     func circle(x: Int, y: Int, diameter: Int, opt: [String:Any]) -> [CAShapeLayer] {
@@ -68,7 +68,18 @@ class Generator {
             let data = hachureFillEllipse(cx: x, cy: y, width: diameter, height: diameter, opt: checked)
             drawings.append(data)
         }
-        return self.sketch(drawings: drawings)
+        return sketch(drawings: drawings)
+    }
+    
+    func ellipse(x: Int, y: Int, width: Int, height: Int, opt: [String:Any]) -> [CAShapeLayer] {
+        let checked = self.checkOptions(input: opt)
+        let elip = self.renderer.ellipse(x: x, y: y, width: width, height: height, opt: checked)
+        var drawings: [Drawing] = [elip]
+        if checked["fillStyle"] as! String == "hachure" {
+            let data = hachureFillEllipse(cx: x, cy: y, width: width, height: height, opt: checked)
+            drawings.append(data)
+        }
+        return sketch(drawings: drawings)
     }
     
     func polygon(points: [[Any]], opt: [String:Any]) -> [CAShapeLayer] {
@@ -91,7 +102,7 @@ class Generator {
             let data = hachureFill(xCoord: xc, yCoord: yc, opt: checked)
             drawings.append(data)
         }
-        return self.sketch(drawings: drawings)
+        return sketch(drawings: drawings)
     }
    
     func sketch(drawings: [Drawing]) -> [CAShapeLayer] {
@@ -112,14 +123,14 @@ class Generator {
             layer.path = sketch.cgPath
             layers.append(layer)
         }
-        self.resetDefaultOptions()
+        resetDefaultOptions()
         return layers
     }
     
     func checkOptions(input: [String : Any]) -> [String : Any] {
         let r = "roughness", b = "bowing", s = "strokeWidth", a = "hachureAngle", g = "hachureGap", f = "fillWeight"
         for (key, value) in input {
-            if (key == r || key == b || key == s || key == a || key == g || key == f) && (!self.validate(val: value)) {
+            if (key == r || key == b || key == s || key == a || key == g || key == f) && (!validate(val: value)) {
                 if String(describing: type(of: value)) != "Int" {
                     self.defaultOptions.updateValue(1.0, forKey: key)
                 }
