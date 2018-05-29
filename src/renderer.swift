@@ -260,35 +260,6 @@ class Renderer {
                        offsetSin + cy + 0.9 * ry * sin(radOffset + ol * 0.5)])
         return self._curve(points: points, close: [CGFloat(0.0)], opt: opt)
     }
-    
-    func _arc(i: CGFloat, cx: CGFloat, cy: CGFloat, rx: CGFloat, ry: CGFloat, st: CGFloat, sp: CGFloat, os: CGFloat, o:[String:Any]) -> [Any] {
-        let rough = o["roughness"] as! Double
-        let offset = self.getOffset(min: -0.1, max: 0.1, roughness: rough)
-        let radOffset = (st + offset)
-        var points: [[CGFloat]] = []
-        
-        var offset1 = self.getOffset(min: -os, max: os, roughness: rough)
-        var offset2 = self.getOffset(min: -os, max: os, roughness: rough)
-        let cosine = cos(radOffset - i)
-        let sine = sin(radOffset - i)
-        
-        points.append([offset1 + cx + 0.9 * rx * cosine,
-                       offset2 + cy + 0.9 * ry * sine])
-        
-        var angle = radOffset
-        while angle <= sp {
-            offset1 = self.getOffset(min: -os, max: os, roughness: rough)
-            offset2 = self.getOffset(min: -os, max: os, roughness: rough)
-            points.append([offset1 + cx + rx * cos(angle),
-                           offset2 + cy + ry * sin(angle)])
-            angle += i
-        }
-        points.append([cx + rx * cos(sp),
-                       cy + ry * sin(sp)])
-        points.append([cx + rx * cos(sp),
-                       cy + ry * sin(sp)])
-        return self._curve(points: points, close: [CGFloat(0.0)], opt: o)
-    }
 }
 
 class Drawing {
