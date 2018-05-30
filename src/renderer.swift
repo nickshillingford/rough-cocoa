@@ -261,13 +261,3 @@ class Renderer {
         return self._curve(points: points, close: [CGFloat(0.0)], opt: opt)
     }
 }
-
-class Drawing {
-    let type: String
-    let data: [Any]
-    
-    init(type: String, data: [Any]) {
-        self.type = type
-        self.data = data
-    }
-}
