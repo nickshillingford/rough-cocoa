@@ -24,11 +24,11 @@ class SegmentData {
 
 class PathToken {
     let tokenType: Int!
-    let text: String!
+    let data: String!
     
-    init(type: Int, txt: String) {
+    init(type: Int, data: String) {
         self.tokenType = type
-        self.text = txt
+        self.data = data
     }
     
     func isType(type: Int) -> Bool {
