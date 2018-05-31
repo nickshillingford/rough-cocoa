@@ -145,7 +145,7 @@ class ParsedPath {
     }
     
     func parseData(path: String) {
-        var tokens = self.tokenize(_path: path)
+        var tokens = self.tokenize(path: path)
         var index: Int! = 0
         var token = tokens[index]
         var mode = "BOD"
@@ -155,25 +155,25 @@ class ParsedPath {
             var params: [String] = []
             
             if mode == "BOD" {
-                if token.text == "M" || token.text == "m" {
+                if token.data == "M" || token.data == "m" {
                     index = index + 1
-                    let pos = self.parameters.index(of: token.text)
+                    let pos = self.parameters.index(of: token.data)
                     paren_length = self.values[pos!].count
-                    mode = token.text
+                    mode = token.data
                 }
                 else {
                     return self.parseData(path: ("M0,0" + path))
                 }
             }
             else {
-                let pos = self.parameters.index(of: token.text)
+                let pos = self.parameters.index(of: token.data)
                 if token.isType(type: self.number) {
                     paren_length = self.values[pos!].count
                 }
                 else {
                     index = index + 1
                     paren_length = self.values[pos!].count
-                    mode = token.text
+                    mode = token.data
                 }
             }
             
@@ -182,10 +182,10 @@ class ParsedPath {
                 while i < (index + paren_length) {
                     let number = tokens[i]
                     if number.isType(type: self.number) {
-                        params.append(number.text)
+                        params.append(number.data)
                     }
                     else {
-                        print("Parameter type is not a number: " + mode + "," + number.text)
+                        print("Parameter type is not a number: " + mode + "," + number.data)
                         return
                     }
                     i = i + 1
@@ -204,11 +204,103 @@ class ParsedPath {
         }
     }
     
-    func tokenize(_path: String) -> [PathToken] {
-        let tokens: [PathToken] = []
-        
-        // todo
-        
+    func tokenize(path: String) -> [PathToken] {
+        var commands: [String]!
+        var values: [String]!
+        var str: String = ""
+        for char in path {
+            if char == "-" { str += " " }
+            str += String(char)
+        }
+        values = str.components(separatedBy: CharacterSet.init(charactersIn: "0123456789.-").inverted)
+        commands = str.components(separatedBy: CharacterSet.decimalDigits)
+        commands = trimCommands(array: commands)
+        commands = filterCommands(array: commands)
+        values = filterValues(array: values)
+        return processCommands(commands: commands, values: values)
+    }
+    
+    func processCommands(commands: [String], values: [String]) -> [PathToken] {
+        var tokens: [PathToken] = []
+        var c = commands
+        var v = values
+        while c.count != 0 {
+            tokens.append(PathToken(type: 0, data: c[0]))
+            if c[0] == "M" || c[0] == "m" || c[0] == "L" || c[0] == "l" ||
+                c[0] == "T" || c[0] == "t" {
+                tokens.append(PathToken(type: 1, data: v[0]))
+                tokens.append(PathToken(type: 1, data: v[1]))
+                let range = 0...1
+                v.removeSubrange(range)
+            }
+            else if c[0] == "H" || c[0] == "h" || c[0] == "V" || c[0] == "v" {
+                tokens.append(PathToken(type: 1, data: v[0]))
+                v.remove(at: 0)
+            }
+            else if c[0] == "S" || c[0] == "s" || c[0] == "Q" || c[0] == "q" {
+                tokens.append(PathToken(type: 1, data: v[0]))
+                tokens.append(PathToken(type: 1, data: v[1]))
+                tokens.append(PathToken(type: 1, data: v[2]))
+                tokens.append(PathToken(type: 1, data: v[3]))
+                let range = 0...3
+                v.removeSubrange(range)
+            }
+            else if c[0] == "C" || c[0] == "c" {
+                tokens.append(PathToken(type: 1, data: v[0]))
+                tokens.append(PathToken(type: 1, data: v[1]))
+                tokens.append(PathToken(type: 1, data: v[2]))
+                tokens.append(PathToken(type: 1, data: v[3]))
+                tokens.append(PathToken(type: 1, data: v[4]))
+                tokens.append(PathToken(type: 1, data: v[5]))
+                let range = 0...5
+                v.removeSubrange(range)
+            }
+            else if c[0] == "A" || c[0] == "a" {
+                tokens.append(PathToken(type: 1, data: v[0]))
+                tokens.append(PathToken(type: 1, data: v[1]))
+                tokens.append(PathToken(type: 1, data: v[2]))
+                tokens.append(PathToken(type: 1, data: v[3]))
+                tokens.append(PathToken(type: 1, data: v[4]))
+                tokens.append(PathToken(type: 1, data: v[5]))
+                tokens.append(PathToken(type: 1, data: v[6]))
+                let range = 0...6
+                v.removeSubrange(range)
+            }
+            else {
+                tokens.append(PathToken(type: 2, data: "end"))
+            }
+            c.remove(at: 0)
+        }
         return tokens
+    }
+    
+    func filterCommands(array: [String]) -> [String] {
+        var filtered = array
+        filtered = filtered.filter {
+            $0 == "M" || $0 == "m" || $0 == "C" || $0 == "c" ||
+            $0 == "A" || $0 == "a" || $0 == "H" || $0 == "h" ||
+            $0 == "L" || $0 == "l" || $0 == "Q" || $0 == "q" ||
+            $0 == "S" || $0 == "s" || $0 == "T" || $0 == "t" ||
+            $0 == "V" || $0 == "v" || $0 == "Z" || $0 == "z"
+        }
+        return filtered
+    }
+    
+    func filterValues(array: [String]) -> [String] {
+        var filtered = array
+        filtered = filtered.filter {
+            $0 != ""
+        }
+        return filtered
+    }
+    
+    func trimCommands(array: [String]) -> [String] {
+        var commands: [String] = []
+        for command in array {
+            var cmd = command
+            cmd = cmd.trimmingCharacters(in: .whitespaces)
+            commands.append(cmd)
+        }
+        return commands
     }
 }
