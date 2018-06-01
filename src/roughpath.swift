@@ -1,12 +1,12 @@
 import Foundation
+import UIKit
 
 class RoughPath {
     let path: String!
     let parsed: ParsedPath!
-    let bezierReflectionPoint: String!
-    let quadReflectionPoint: String!
-    
-    var linearPoints: [[Int]]!
+    var bezierReflectionPoint: [CGFloat]!
+    var quadReflectionPoint: [CGFloat]!
+    var linearPoints: [[CGFloat]]!
     var position: [Double]!
     var first: [Double]!
     var hasLP: Bool!
@@ -16,17 +16,17 @@ class RoughPath {
         self.parsed = ParsedPath(path: path)
         self.linearPoints = [[0, 0]]
         self.position = [0.0, 0.0]
-        self.bezierReflectionPoint = ""
-        self.quadReflectionPoint = ""
         self.first = [-1.0, -1.0]
         self.hasLP = false
+        self.bezierReflectionPoint = []
+        self.quadReflectionPoint = []
     }
     
     func getSegments() -> [SegmentData] {
         return self.parsed.segments
     }
     
-    func getLinearPoints() -> [[Int]] {
+    func getLinearPoints() -> [[CGFloat]] {
         if self.hasLP == false {
             let len = self.parsed.segments.count - 1
             var i = 0
