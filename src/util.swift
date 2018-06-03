@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 
 class Drawing {
     let type: String
@@ -13,7 +14,7 @@ class Drawing {
 class SegmentData {
     let key: String!
     let data: [String]!
-    var point: [Int]!
+    var point: [CGFloat]!
     
     init(key: String, data: [String]) {
         self.key = key
