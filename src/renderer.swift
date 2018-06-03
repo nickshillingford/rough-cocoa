@@ -62,6 +62,54 @@ class Renderer {
         return Drawing(type: "path", data: (o1 + o2))
     }
     
+    func arc(x: Int, y: Int, width: Int, height: Int, start: CGFloat, stop: CGFloat, closed: Bool, rc: Bool, opt: [String:Any]) -> Drawing {
+        var data: [Any] = []
+        let cx = x
+        let cy = y
+        var rx = CGFloat(abs(width / 2))
+        var ry = CGFloat(abs(height / 2))
+        let rough = opt["roughness"] as! Double
+        
+        rx += self.getOffset(min: CGFloat(-rx) * 0.01, max: CGFloat(rx) * 0.01, roughness: rough)
+        ry += self.getOffset(min: CGFloat(-ry) * 0.01, max: CGFloat(ry) * 0.01, roughness: rough)
+        
+        var strt = start
+        var stp = stop
+        
+        while strt < 0.0 {
+            strt += CGFloat.pi * 2.0
+            stp += CGFloat.pi * 2.0
+        }
+        if (stp - strt) > (CGFloat.pi * 2.0) {
+            strt = 0.0
+            stp = CGFloat.pi * 2.0
+        }
+        
+        let curveStepCount = CGFloat(opt["curveStepCount"] as! Double)
+        let ellipseInc = (CGFloat.pi * 2.0) / curveStepCount
+        let arcInc = min((ellipseInc / 2), (stp - strt) / 2)
+        let o1 = self._arc(i: arcInc, cx: CGFloat(cx), cy: CGFloat(cy), rx: rx, ry: ry, st: strt, sp: stp, os: 1.0, o: opt)
+        let o2 = self._arc(i: arcInc, cx: CGFloat(cx), cy: CGFloat(cy), rx: rx, ry: ry, st: strt, sp: stp, os: 1.5, o: opt)
+        data = o1 + o2
+        if closed {
+            if rc {
+                let strtCos = CGFloat(cx) + rx * cos(strt)
+                let stpCos = CGFloat(cx) + rx * cos(stp)
+                let strtSin = CGFloat(cy) + ry * sin(strt)
+                let stpSin = CGFloat(cy) + ry * sin(stp)
+                data = data + self.doubleLine(x1: cx, y1: cy, x2: Int(strtCos), y2: Int(strtSin), opt: opt)
+                data = data + self.doubleLine(x1: cx, y1: cy, x2: Int(stpCos), y2: Int(stpSin), opt: opt)
+            }
+            else {
+                data.append(["lineTo" : [CGFloat(cx), CGFloat(cy)]])
+                let d1 = CGFloat(cx) + rx * cos(strt)
+                let d2 = CGFloat(cy) + ry * sin(strt)
+                data.append(["lineTo" : [d1, d2]])
+            }
+        }
+        return Drawing(type: "path", data: data)
+    }
+    
     func getOffset(min: CGFloat, max: CGFloat, roughness: Double) -> CGFloat {
         let rand = CGFloat(Float(arc4random()) / Float(UINT32_MAX))
         return CGFloat(CGFloat(roughness) * ((rand * (max - min)) + min))
@@ -164,6 +212,35 @@ class Renderer {
         }
         data.append(["bcurveTo" : [d1, d2, d3, d4, d5, d6]])
         return data
+    }
+    
+    func _arc(i: CGFloat, cx: CGFloat, cy: CGFloat, rx: CGFloat, ry: CGFloat, st: CGFloat, sp: CGFloat, os: CGFloat, o:[String:Any]) -> [Any] {
+        let rough = o["roughness"] as! Double
+        let offset = self.getOffset(min: -0.1, max: 0.1, roughness: rough)
+        let radOffset = (st + offset)
+        var points: [[CGFloat]] = []
+        
+        var offset1 = self.getOffset(min: -os, max: os, roughness: rough)
+        var offset2 = self.getOffset(min: -os, max: os, roughness: rough)
+        let cosine = cos(radOffset - i)
+        let sine = sin(radOffset - i)
+        
+        points.append([offset1 + cx + 0.9 * rx * cosine,
+                       offset2 + cy + 0.9 * ry * sine])
+        
+        var angle = radOffset
+        while angle <= sp {
+            offset1 = self.getOffset(min: -os, max: os, roughness: rough)
+            offset2 = self.getOffset(min: -os, max: os, roughness: rough)
+            points.append([offset1 + cx + rx * cos(angle),
+                           offset2 + cy + ry * sin(angle)])
+            angle += i
+        }
+        points.append([cx + rx * cos(sp),
+                       cy + ry * sin(sp)])
+        points.append([cx + rx * cos(sp),
+                       cy + ry * sin(sp)])
+        return self._curve(points: points, close: [CGFloat(0.0)], opt: o)
     }
     
     func _curve(points: [[CGFloat]], close: [CGFloat], opt: [String:Any]) -> [Any] {
