@@ -104,6 +104,13 @@ class Generator {
         }
         return sketch(drawings: drawings)
     }
+    
+    func arc(x: Int, y: Int, width: Int, height: Int, start: CGFloat, stop: CGFloat, closed: Bool, o: [String:Any]) -> [CAShapeLayer] {
+        let c = self.checkOptions(input: o)
+        let a = self.renderer.arc(x: x, y: y, width: width, height: height, start: start, stop: stop, closed: true, rc: false, opt: c)
+        let drawings: [Drawing] = [a]
+        return sketch(drawings: drawings)
+    }
    
     func sketch(drawings: [Drawing]) -> [CAShapeLayer] {
         var layers: [CAShapeLayer] = []
