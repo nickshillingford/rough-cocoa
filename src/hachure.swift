@@ -199,6 +199,49 @@ func hachureFillEllipse(cx: Int, cy: Int, width: Int, height: Int, opt: [String:
     return Drawing(type: "fillSketch", data: data)
 }
 
+func hachureFillArc(x: Int, y: Int, width: Int, height: Int, start: Int, stop: Int, opt: [String:Any]) -> Drawing {
+    let rough = opt["roughness"] as! Double
+    var rx = CGFloat(abs(width / 2))
+    var ry = CGFloat(abs(height / 2))
+    let cx = x
+    let cy = y
+    
+    rx += rr.getOffset(min: (-rx * 0.01), max: (rx * 0.01), roughness: rough)
+    ry += rr.getOffset(min: (-ry * 0.01), max: (ry * 0.01), roughness: rough)
+    
+    var strt = CGFloat(start)
+    var stp = CGFloat(stop)
+    
+    while (strt < 0.0) {
+        strt += (CGFloat.pi * 2.0)
+        stp += (CGFloat.pi * 2.0)
+    }
+    if (stp - strt) > (CGFloat.pi * 2.0) {
+        strt = 0.0
+        stp = (CGFloat.pi * 2.0)
+    }
+    
+    let curveStepCount = CGFloat(opt["curveStepCount"] as! Double)
+    let increment = ((stp - strt) / curveStepCount)
+    var xc: [Double] = []
+    var yc: [Double] = []
+    var angle = strt
+    while angle <= stp {
+        let _cos = CGFloat(cx) + rx * cos(angle)
+        let _sin = CGFloat(cy) + ry * sin(angle)
+        xc.append(Double(_cos))
+        yc.append(Double(_sin))
+        angle += increment
+    }
+    let cosStp = CGFloat(cx) + rx * cos(stp)
+    let sinStp = CGFloat(cy) + ry * sin(stp)
+    xc.append(Double(cosStp))
+    xc.append(Double(cx))
+    yc.append(Double(sinStp))
+    yc.append(Double(cy))
+    return hachureFill(xCoord: xc, yCoord: yc, opt: opt)
+}
+
 func getIntersectingLines(lC: [Double], xC: [Double], yC: [Double]) -> [[Double]] {
     var intersections: [[Double]] = []
     let s1 = Segment(_px1: lC[0], _py1: lC[1], _px2: lC[2], _py2: lC[3])
