@@ -110,6 +110,29 @@ class Renderer {
         return Drawing(type: "path", data: data)
     }
     
+    func path(path: String, opt: [String:Any]) -> Drawing {
+        var data: [Any] = []
+        let processor = SegmentProcessor()
+        let rp = RoughPath(path: path)
+        let segments = rp.parsed.segments
+        var i = 0
+        while i < segments.count {
+            let current = segments[i]
+            let previous: SegmentData!
+            let opList: [Any]!
+            if i > 0 {
+                previous = segments[i - 1]
+                opList = processor.processSegment(path: rp, current: current, previous: previous, opt: opt)
+            }
+            else {
+                opList = processor.processSegment(path: rp, current: current, previous: current, opt: opt)
+            }
+            data = data + opList
+            i = i + 1
+        }
+        return Drawing(type: "path", data: data)
+    }
+    
     func getOffset(min: CGFloat, max: CGFloat, roughness: Double) -> CGFloat {
         let rand = CGFloat(Float(arc4random()) / Float(UINT32_MAX))
         return CGFloat(CGFloat(roughness) * ((rand * (max - min)) + min))
