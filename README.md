@@ -3,8 +3,6 @@ An iOS graphics library for rendering UI Bezier Paths in hand drawn sketch style
 
 ## Install
 
-Download the src folder from this repository and include the files in your Xcode project. If you'd like it to be available on CocoaPods, let me know.
-
 ## Usage
 
 ![Rough Cocoa rectangle](https://firebasestorage.googleapis.com/v0/b/web-demo-2188e.appspot.com/o/IMG_3171.png?alt=media&token=39e47742-86c4-4c2c-960d-2ec524054df2)
