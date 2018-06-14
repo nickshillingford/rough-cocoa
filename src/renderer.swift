@@ -360,4 +360,38 @@ class Renderer {
                        offsetSin + cy + 0.9 * ry * sin(radOffset + ol * 0.5)])
         return self._curve(points: points, close: [CGFloat(0.0)], opt: opt)
     }
+    
+    func bezierTo(x1: CGFloat, y1: CGFloat, x2: CGFloat, y2: CGFloat, x: CGFloat, y: CGFloat, p: RoughPath, o: [String:Any]) -> [Any] {
+        let offset = o["maxRandomnessOffset"] as! Double
+        let rough = o["roughness"] as! Double
+        let ros = [offset, (offset + 0.5)]
+        var data: [Any] = []
+        var f: [CGFloat]!
+        for i in 0...1 {
+            if i == 0 {
+                data.append(["move" : [CGFloat(p.getX()), CGFloat(p.getY())]])
+            }
+            else {
+                let ox = self.getOffset(min: CGFloat(-ros[0]), max: CGFloat(ros[0]), roughness: rough)
+                let oy = self.getOffset(min: CGFloat(-ros[0]), max: CGFloat(ros[0]), roughness: rough)
+                let d1 = (ox + CGFloat(p.getX()))
+                let d2 = (oy + CGFloat(p.getY()))
+                data.append(["move" : [d1, d2]])
+            }
+            let ox = self.getOffset(min: CGFloat(-ros[0]), max: CGFloat(ros[0]), roughness: rough)
+            let oy = self.getOffset(min: CGFloat(-ros[0]), max: CGFloat(ros[0]), roughness: rough)
+            f = [x + ox, y + oy]
+            let ox1 = self.getOffset(min: CGFloat(-ros[0]), max: CGFloat(ros[0]), roughness: rough)
+            let ox2 = self.getOffset(min: CGFloat(-ros[0]), max: CGFloat(ros[0]), roughness: rough)
+            let oy1 = self.getOffset(min: CGFloat(-ros[0]), max: CGFloat(ros[0]), roughness: rough)
+            let oy2 = self.getOffset(min: CGFloat(-ros[0]), max: CGFloat(ros[0]), roughness: rough)
+            let d1 = x1 + ox1
+            let d2 = y1 + oy1
+            let d3 = x2 + ox2
+            let d4 = y2 + oy2
+            data.append(["bcurveTo" : [d1, d2, d3, d4, f[0], f[1]]])
+        }
+        p.setPosition(x: Double(f[0]), y: Double(f[1]))
+        return data
+    }
 }
