@@ -109,7 +109,23 @@ class Generator {
         let c = self.checkOptions(input: o)
         let a = self.renderer.arc(x: x, y: y, width: width, height: height, start: start, stop: stop, closed: true, rc: false, opt: c)
         let drawings: [Drawing] = [a]
+        
+        // todo: fillStyle
+        
         return sketch(drawings: drawings)
+    }
+    
+    func path(path: String, x: Int, y: Int, scale: CGFloat, opt: [String:Any]) -> [CAShapeLayer] {
+        let checked = self.checkOptions(input: opt)
+        let dPath = self.renderer.path(path: path, opt: checked)
+        let drawings: [Drawing] = [dPath]
+        
+        // todo: fillStyle
+        
+        let layer = self.sketch(drawings: drawings)
+        layer[0].transform = CATransform3DMakeScale(scale, scale, 0)
+        layer[0].position = CGPoint(x: x, y: y)
+        return layer
     }
    
     func sketch(drawings: [Drawing]) -> [CAShapeLayer] {
