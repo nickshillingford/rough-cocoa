@@ -1,6 +1,13 @@
 import Foundation
 import UIKit
 
+/**
+ * @class Renderer
+ *
+ * Computes and stores the data defining a shape.
+ * Most of the functions in this class are referenced by a Generator object.
+ * The rest are helper functions for this class.
+ */
 class Renderer {
     func line(x1: Int, y1: Int, x2: Int, y2: Int, opt: [String:Any]) -> Drawing {
         let data = self.doubleLine(x1: x1, y1: y1, x2: x2, y2: y2, opt: opt)
@@ -138,6 +145,12 @@ class Renderer {
         return CGFloat(CGFloat(roughness) * ((rand * (max - min)) + min))
     }
     
+    /**
+     * @function _doubleLine
+     *
+     * Creates two rough lines (one using full offset and one using half offset) and concatenates their data into one array.
+     * @param opt: a dictionary of key value options.
+     */
     func doubleLine(x1: Int, y1: Int, x2: Int, y2: Int, opt: [String:Any]) -> [Any] {
         let l1 = self._line(x1: x1, y1: y1, x2: x2, y2: y2, opt: opt, move: true, overlay: false)
         let l2 = self._line(x1: x1, y1: y1, x2: x2, y2: y2, opt: opt, move: true, overlay: true)
@@ -170,6 +183,14 @@ class Renderer {
         return result
     }
     
+    /**
+     * @function _line
+     *
+     * Computes the offsetted moveTo and bcurveTo path data based on the x and y start/end points of a line.
+     * @param opt: a dictionary of key value options.
+     * @param move: a boolean specifying whether this call will include a moveTo command.
+     * @param overlay: a boolean specifying whether to use a full or half offset.
+     */
     func _line(x1: Int, y1: Int, x2: Int, y2: Int, opt: [String:Any], move: Bool, overlay: Bool) -> [Any] {
         var data: [[String : [CGFloat]]] = []
         
