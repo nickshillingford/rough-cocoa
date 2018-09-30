@@ -1,5 +1,3 @@
-## Usage
-
 ## Rectangles
 
 ![Rough Cocoa rectangle](https://firebasestorage.googleapis.com/v0/b/web-demo-2188e.appspot.com/o/IMG_3171.png?alt=media&token=39e47742-86c4-4c2c-960d-2ec524054df2)
@@ -20,25 +18,6 @@ gen.draw(drawing: rect, view: self.view) // draw the shape on the UIViewControll
 let circ = gen.circle(x: 150, y: 150, diameter: 50, opt: [:])
 let elip = gen.ellipse(x: 220, y: 450, width: 150, height: 80, opt: [:])
 let line = gen.line(x1: 150, y1: 150, x2: 220, y2: 450, opt: [:])   
-
-```
-
-## Polygons
-
-![Rough Cocoa polygon](https://firebasestorage.googleapis.com/v0/b/web-demo-2188e.appspot.com/o/polygon.png?alt=media&token=2a28525a-2be4-4ff0-9bb0-e632975e1d37)
-
-```swift
-        
-let poly1 = gen.polygon(points: [[75, 450], [126, 350], [180, 450]], opt: ["fill": UIColor.yellow.cgColor,
-                                                                           "fillStyle": "solid"])
-        
-let poly2 = gen.polygon(points: [[185, 450], [236, 350], [290, 450]], opt: ["fill": UIColor.blue.cgColor,
-                                                                            "fillStyle": "solid"])
-        
-let poly3 = gen.polygon(points: [[128, 348], [179, 248], [233, 348]], opt: ["fill": UIColor.red.cgColor,
-                                                                            "hachureAngle": 45,
-                                                                            "fillWeight": 2.25])
-          
 
 ```
 
