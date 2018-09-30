@@ -65,7 +65,11 @@ let rect3 = gen.rectangle(x: 130, y: 375, width: 100, height: 100, opt: ["bowing
                                                                          
 ```
 
-## Credits
 
-This library was inspired by Preet Shihn's Rough JS.
-The core algorithms were also borrowed from Rough JS.
+## planning to implement:
+
+- `custom paths`
+
+- `polygons`
+
+- `arcs`
