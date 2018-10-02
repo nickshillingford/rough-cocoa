@@ -23,7 +23,7 @@ class SegmentData {
     }
 }
 
-class PathToken {
+class PathToken: Equatable {
     let tokenType: Int!
     let data: String!
     
@@ -34,5 +34,9 @@ class PathToken {
     
     func isType(type: Int) -> Bool {
         return self.tokenType == type
+    }
+    
+    static func == (lhs: PathToken, rhs: PathToken) -> Bool {
+        return ((lhs.tokenType == rhs.tokenType) && (lhs.data == rhs.data))
     }
 }
